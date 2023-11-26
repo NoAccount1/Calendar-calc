@@ -1,36 +1,47 @@
-from icalendar import Calendar, Event, prop
 import icalendar
+from icalendar import Calendar, Event, prop
 import requests
+from requests import ConnectionError
 
 import datetime
 import json
+import os
 
 from pprint import pprint
 
-# TP 11
-a1_t11 = "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270585&projectId=11&calType=ical&nbWeeks=16"
-# TP 9
-a3_t10 = "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=94072&projectId=11&calType=ical&nbWeeks=16"
-
-urlfile = requests.get(a1_t11).content.decode()
-
-with open("cal/270585.ics", "w+") as ics270585:
-    ics270585.write(urlfile)
+ical_urls = {
+    "tp10_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=94072&projectId=11&calType=ical&nbWeeks=16",
+    "tp11_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270585&projectId=11&calType=ical&nbWeeks=16",
+}
 
 def print_dir(obj):
     for i in dir(obj):
         print(i)
 
+def main():
+    # Collecting ICS files
+    ical_files = next(os.walk("cal"), (None, None, []))[2]
 
-with open("ADECal.ics", "r") as ics_file:
-    cal = Calendar.from_ical(ics_file.read())
+    try:
+        for name, url in ical_urls.items():
+            if not f"{name}.ics" in ical_files:
+                urlfile = requests.get(url).content.decode()
+                with open(f"cal/{name}.ics", "w+") as file:
+                    file.write(urlfile)
+                print(f"Getting file {name}")
+    except ConnectionError as err:
+        print(f"An error occured : \n{err}")
 
-    metadata = dict(cal.items())
+    ical_files = next(os.walk("cal"), (None, None, []))[2] # refresh file list
+    calendars = []
+    for file in ical_files:
+        with open(f"cal/{file}", "r") as ics_file:
+            cal = Calendar.from_ical(ics_file.read())
 
-    cal = cal.walk()
+            metadata = dict(cal.items())
 
-    cal = [i for i in cal]
-    # print(cal[0].items().mapping['DTSTART'])
-    # events = []
-    # for i in cal:
-    #   events.append({})
+            calendars.append({file: cal.subcomponents})
+    print(calendars)
+
+if __name__ == "__main__":
+    main()
