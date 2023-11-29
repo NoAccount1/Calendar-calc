@@ -53,6 +53,8 @@ def main():
     while date < datetime(2024, 7, 1, 8):  # Checking every hour of class
         if hours.index(date.hour) == 3 or date.weekday() == 6:
             date += td(days=1)
+        if date.weekday() == 5:
+            date += td(days=2)
         date = date.replace(hour=hours[(hours.index(date.hour) + 1) % 4])
 
         event_tp11 = next(
@@ -82,4 +84,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
