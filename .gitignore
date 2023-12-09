@@ -2,4 +2,8 @@ cred**
 token**
 .prettierrc
 
+**/cal # ignore downloaded calendars
+
 **/tmp
+**/test
+**/.vscode
