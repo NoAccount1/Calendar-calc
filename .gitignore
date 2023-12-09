@@ -2,7 +2,8 @@ cred**
 token**
 .prettierrc
 
-**/cal # ignore downloaded calendars
+# Ignore downloaded calendars
+**/cal
 
 **/tmp
 **/test
