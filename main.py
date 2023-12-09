@@ -1,17 +1,29 @@
 import icalendar
-from icalendar import Calendar, Event, prop
+from icalendar import Calendar, Event, prop, vDDDTypes
 import requests
 from requests import ConnectionError
 
 from datetime import datetime, timedelta as td
 import json
+import time  # performance test
 import os
 
 from pprint import pprint
 
 ical_urls = {
-    "tp10_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=94072&projectId=11&calType=ical&nbWeeks=16",
+    "tp1_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270574&projectId=11&calType=ical&nbWeeks=16",
+    "tp2_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270575&projectId=11&calType=ical&nbWeeks=16",
+    "tp3_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270576&projectId=11&calType=ical&nbWeeks=16",
+    "tp4_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270577&projectId=11&calType=ical&nbWeeks=16",
+    "tp5_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270578&projectId=11&calType=ical&nbWeeks=16",
+    "tp6_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270579&projectId=11&calType=ical&nbWeeks=16",
+    "tp7_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270580&projectId=11&calType=ical&nbWeeks=16",
+    "tp8_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270581&projectId=11&calType=ical&nbWeeks=16",
+    "tp9_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270582&projectId=11&calType=ical&nbWeeks=16",
+    "tp10_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270583&projectId=11&calType=ical&nbWeeks=16",
     "tp11_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270585&projectId=11&calType=ical&nbWeeks=16",
+    "tp12_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270586&projectId=11&calType=ical&nbWeeks=16",
+    "tp10_3a_ia2r": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=94072&projectId=11&calType=ical&nbWeeks=16",
 }
 
 
@@ -35,15 +47,42 @@ def main():
         print(f"An error occured : \n{err}")
 
     ical_files = next(os.walk("cal"), (None, None, []))[2]  # Refresh local ics files
-    calendars = {}
+    calendars, metadata = {}, {}
     for file in ical_files:
         with open(f"cal/{file}", "r") as ics_file:
             cal = Calendar.from_ical(ics_file.read())
 
-            metadata = dict(cal.items())
+            metadata[file] = dict(cal.items())
 
             calendars[file] = cal.subcomponents
-    test_date = datetime(2023, 12, 1, 14).astimezone()
+
+    for cal in calendars:
+        for i in [
+            x for x in calendars[cal] if x["DTEND"].dt.hour - x["DTSTART"].dt.hour == 4
+        ]:
+            date_start = i["DTSTART"]
+            date_end = i["DTEND"]
+            date_middle = vDDDTypes(i["DTSTART"].dt + td(hours=2))
+
+            first = Event(i)
+            second = Event(i)
+            first["DTSTART"] = date_start
+            second["DTEND"] = date_end
+            first["DTEND"] = date_middle
+            second["DTSTART"] = date_middle
+
+            calendars[cal].append(first)
+            calendars[cal].append(second)
+        calendars[cal] = [
+            i for i in calendars[cal] if i["DTEND"].dt.hour - i["DTSTART"].dt.hour != 4
+        ]
+
+    for cal in calendars:
+        with open(f"tmp/{cal}", "w+") as file:
+            calendar = Calendar()
+            for i in calendars[cal]:
+                calendar.add_component(i)
+            file.write(calendar.to_ical().decode())
 
     hours = [8, 10, 14, 16]
 
@@ -74,10 +113,23 @@ def main():
             None,
         )
 
-        if not event_tp10 and not event_tp11:
-            merged.append(date.astimezone().ctime())
+        if not (event_tp10 or event_tp11):
+            # print(date.astimezone().ctime())
+            merged.append(prop.vDDDTypes(date - td(hours=1)))
 
-    pprint(merged)
+    free_time = Calendar(metadata["tp11_1a.ics"])
+    for i in merged:
+        free_time.add_component(
+            Event(
+                {
+                    "DTSTART": i.to_ical(),
+                    "DTEND": prop.vDDDTypes(i.dt + td(hours=2)).to_ical(),
+                    "SUMMARY": "Temps libre",
+                }
+            )
+        )
+    with open("tmp/temps_libre.ics", "w+") as tmp:
+        tmp.write(free_time.to_ical().decode())
 
     print(f"len = {len(merged)}")
 
