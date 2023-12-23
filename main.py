@@ -3,12 +3,15 @@ from icalendar import Calendar, Event, prop, vDDDTypes
 import requests
 from requests import ConnectionError
 
+# from calendar import *
 from datetime import datetime, timedelta as td
 import json
 import time  # performance test
 import os
 
 from pprint import pprint
+
+from gui import run_gui
 
 ical_urls = {
     "tp1_1a": "https://planning.univ-lorraine.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=270574&projectId=11&calType=ical&nbWeeks=16",
@@ -88,8 +91,16 @@ def main():
 
     merged = []
 
+    nbr = 0
+    for i in calendars:
+        nbr += 1
+        print(f" {nbr} - {i}")
+    names = [i for i in calendars]
+    cal_first = names[int(input("first  > ")) - 1]
+    cal_secnd = names[int(input("second > ")) - 1]
+
     date = datetime(2023, 11, 26, 8)
-    while date < datetime(2024, 7, 1, 8):  # Checking every hour of class
+    while date < datetime(2024, 2, 1, 8):  # Checking every hour of class
         if hours.index(date.hour) == 3 or date.weekday() == 6:
             date += td(days=1)
         if date.weekday() == 5:
@@ -99,7 +110,7 @@ def main():
         event_tp11 = next(
             (
                 i["dtstart"]
-                for i in calendars["tp11_1a.ics"]
+                for i in calendars[cal_first]
                 if i["DTSTART"].dt.astimezone() == date.astimezone()
             ),
             None,
@@ -107,7 +118,7 @@ def main():
         event_tp10 = next(
             (
                 i["dtstart"]
-                for i in calendars["tp10_1a.ics"]
+                for i in calendars[cal_secnd]
                 if i["DTSTART"].dt.astimezone() == date.astimezone()
             ),
             None,

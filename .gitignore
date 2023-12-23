@@ -1,6 +1,7 @@
 cred**
 token**
 .prettierrc
+**/__pycache__
 
 # Ignore downloaded calendars
 **/cal
@@ -8,3 +9,5 @@ token**
 **/tmp
 **/test
 **/.vscode
+ics
+
