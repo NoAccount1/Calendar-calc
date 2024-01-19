@@ -36,6 +36,10 @@ def print_dir(obj):
 
 
 def main():
+    # Create necessary folders
+    if not os.path.exists("cal"): os.mkdir("cal")
+    if not os.path.exists("tmp"): os.mkdir("tmp")
+
     ical_files = next(os.walk("cal"), (None, None, []))[2]  # List ICS files from urls
 
     # Refresh ICS files on disk
